@@ -1,0 +1,162 @@
+# pizza_palace_v1.py
+# version 1: GUI based pizza palace
+# in this program, users can order pizzas and will also be provided with an invoice
+# r.tanner 10/06/2024
+
+from tkinter import*
+import tkinter as tk
+from tkinter import messagebox
+from tkinter.ttk import Combobox #ttk is an extension of tkinter library
+from PIL import ImageTk, Image #importing ImageTk, a specific widget used in this program to create a photo. 
+
+root = Tk()
+root.geometry("1000x1000")
+root.title("Pizza Palace")
+root.configure(bg = "light blue")
+
+class Pizza:
+    def __init__(self, name, price, size):
+        self.name = name
+        self.price = price
+        self.size = size
+
+class Vegetarian(Pizza):
+    def __init__(self, name, price, size):
+        super().__init__(name, price, size)
+
+cart = []
+
+# Example pizza menu
+pizzas = [
+    Pizza("Margherita", 8.99, "Medium"),
+    Pizza("Pepperoni", 9.99, "Medium"),
+    Vegetarian("Veggie Delight", 10.99, "Medium"),
+    Pizza("BBQ Chicken", 11.99, "Large")
+]
+
+def start_screen():
+    global frame0
+    frame0 = Frame(root, bg = "light blue")
+    frame0.pack()
+
+    pizza_label = Label(frame0, text = "PIZZA PALACE", font = ("Arial Bold", 40), bg = "light blue", justify = "center")
+    pizza_label.grid(row = 0, column = 1, padx = 10, pady = 20)
+
+    order_button = Button(frame0, text = "Place an Order", height = 2, width = 20, font = ("Arial", 20), bg = "light green", command = menu)
+    order_button.grid(row = 1, column = 1, padx = 10, pady = 5)
+
+    exit_button = Button(frame0, text = "Exit", height = 2, width = 20, font = ("Arial", 20), bg = "red", justify = "center", command = exit )
+    exit_button.grid(row = 2, column = 1, padx = 10, pady = 5)
+
+    #adding an image to the frame
+    pizza_img = ImageTk.PhotoImage(Image.open("pizza_image.jpg"))
+    label1 = tk.Label(frame0, image = pizza_img)
+    label1.image = pizza_img
+    label1.grid(row = 3, column = 1, padx = 20, pady = 10)
+
+def menu():
+    global menu_frame
+    frame0.pack_forget()
+    menu_frame = Frame(root, bg = "light blue")
+    menu_frame.pack()
+
+    order_label = Label(menu_frame, text = "PIZZA PALACE MENU", font = ("Arial Bold", 40), bg = "light blue", justify = "center")
+    order_label.grid(row = 0, column = 1, padx = 10, pady = 20)
+
+    order_pizza = Button(menu_frame, text = "PIZZA", height = 2, width = 20, font = ("Arial", 20), bg = "light green", command = order)
+    order_pizza.grid(row = 1, column = 1, padx = 10, pady = 5)
+    
+    checkout_btn = Button(menu_frame, text = "CHECKOUT", height = 2, width = 20, font = ("Arial", 20), bg = "light green", command = checkout)
+    checkout_btn.grid(row = 2, column = 1, padx = 10, pady = 5)
+
+    exit_button = Button(menu_frame, text = "Exit", height = 2, width = 20, font = ("Arial", 20), bg = "red", justify = "center", command = exit )
+    exit_button.grid(row = 3, column = 1, padx = 10, pady = 5)
+
+def order():
+    global order_frame
+    menu_frame.pack_forget()
+    global pizza_vars
+    pizza_vars = []
+    order_frame = Frame(root, bg = "light blue")
+    order_frame.pack()
+
+    pizza_name = Label(order_frame, text = "Pizza", font = ("Arial Bold", 20), bg = "light blue")
+    pizza_name.grid(row = 0, column = 1, padx = 10, pady = 10)
+
+    quantity_name = Label(order_frame, text = "Quantity", font = ("Arial Bold", 20), bg = "light blue")
+    quantity_name.grid(row = 0, column = 2, padx = 10, pady = 10)
+
+    size_name = Label(order_frame, text = "Size", font = ("Arial Bold", 20), bg = "light blue")
+    size_name.grid(row = 0, column = 3, padx = 10, pady = 10)
+
+    row = 1
+    for pizza in pizzas:
+        pizza_label = Label(order_frame, text=f"{pizza.name} - ${pizza.price}", font=("Arial", 20), bg="light blue", justify="center")
+        pizza_label.grid(row = row, column = 1, padx = 10, pady = 5)
+
+        quantity_box = Spinbox(order_frame, from_ = 0, to = 10, width = 5, state = "readonly")
+        quantity_box.grid(row = row, column = 2, padx = 10, pady = 10)
+
+        combo = Combobox(order_frame, state = "readonly")
+        combo["values"] = ("Small", "Medium", "Large") #adding combo items using tuple
+        combo.current(0) #setting selected items
+        combo.grid(row = row, column = 3)
+
+        pizza_vars.append((pizza, quantity_box, combo))
+        row += 1
+
+    submit_button = Button(order_frame, text = "submit", bg = "light green", command = place_order)
+    submit_button.grid(row = row, column = 3)
+
+
+def place_order():
+    for pizza, quantity_box, combo in pizza_vars:
+        quantity = int(quantity_box.get())
+        size = combo.get()
+        if quantity > 0:
+            cart.append((pizza.name, quantity, size, pizza.price))
+
+    messagebox.showinfo("Success!", "Item(s) have been added to order!")
+    order_frame.pack_forget()
+    checkout()
+    
+def checkout():
+    global checkout_frame
+    menu_frame.pack_forget()
+    checkout_frame = Frame(root, bg = "light blue")
+    checkout_frame.pack()
+
+    back_button = Button(checkout_frame, text = "back", command =  clear_checkout)
+    back_button.grid(row = 0, column = 0)
+
+    checkout_label = Label(checkout_frame, text = "Checkout", font = ("Arial Bold", 20), bg = "light blue", justify = "center")
+    checkout_label.grid(row = 0, column = 1, padx = 10, pady = 20)
+
+    total_cost = 0
+    row = 1
+    for item in cart:
+        pizza_name, quantity, size, price = item
+        item_total = quantity * price
+        total_cost += item_total
+        item_label = Label(checkout_frame, text=f"{pizza_name} ({size}) x{quantity} - ${item_total:.2f}", font=("Arial", 20), bg="light blue", justify="center")
+        item_label.grid(row = row, column = 1, padx = 10, pady = 5)
+        row += 1
+
+    total_label = Label(checkout_frame, text=f"Your total comes to: ${item_total:.2f}", font=("Arial", 20), bg="light blue", justify="center")
+    total_label.grid(row = row+1, column = 1, padx = 10, pady = 5)
+
+    place_order_btn = Button(checkout_frame, text = "Place order", font=("Arial", 20), bg="light green", command =  order_items,)
+    place_order_btn.grid(row = row+2, column = 1)
+
+
+def clear_checkout():
+    checkout_frame.pack_forget()
+    menu()
+
+def order_items():
+    messagebox.showinfo("Success!", "Your order has been placed!")
+    exit
+    
+start_screen()
+
+root.mainloop()
